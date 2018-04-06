@@ -26,7 +26,7 @@ SECRET_KEY = 'ip(3a2ev0*nbv_6)lq(euj#cp$l+)0g(h6$u25pkzpl4tk*m2n'
 DEBUG = True
 
 ALLOWED_HOSTS = ['*',]
-
+# some text to wrap up ch09
 
 # Application definition
 
