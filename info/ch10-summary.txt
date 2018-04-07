@@ -1,0 +1,229 @@
+ssh vldo@206.189.18.136
+STAGING_SERVER=st01.vassily.pro ./ma* test ft
+./vi*/bin/python manage.py runserver
+
+---
+echo 'YOUR-PUBLIC_KEY' > > ~/.ssh/authorized_keys
+
+useradd -m -s /bin/bash vldo # add user named vldo 
+# -m creates a home folder, -s sets vldo to use bash by default
+usermod -a -G sudo vldo # add to the sudoers group
+passwd vldo 
+su - vldo # switch-user to vldo!
+
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install curl git nginx python3.6 python3.6-venv
+export SITENAME=st01.vassily.pro
+git clone https://github.com/vassily-la/obey01.git ~/sites/$SITENAME
+cd ~/sites/$SITENAME
+python3.6 manage.py runserver
+
+=============== LOCAL
+STAGING_SERVER=st01.vassily.pro ./ma* test ft # FAIL
+curl st01.vassily.pro # 
+================remote
+python3.6 manage.py runserver 0.0.0.0:8000 # make sure it listens
+===============local 
+STAGING_SERVER=st01.vassily.pro:8000 ./ma* test ft --failfast
+# FAIL: disallowed host
+SOLVED
++++++ CH 10
+sudo apt install nginx
+# Start nginx
+sudo systemctl start nginx
+then 
+touch /etc/nginx/sites-available/DOMAIN
+==========
+server {
+  listen 80;
+  server_name st01.vassily.pro;
+
+  location / {
+    proxy_pass http://localhost:8000;
+  }
+}
+========= CREATE A SYMLINK
+vldo@ululx:/etc/nginx/sites-available$ export SITENAME=st01.vassily.pro
+vldo@ululx:/etc/nginx/sites-available$ cd /etc/nginx/sites-e*
+vldo@ululx:/etc/nginx/sites-enabled$ sudo ln -s /etc/nginx/sites-available/$SITENAME $SITENAME
+vldo@ululx:/etc/nginx/sites-enabled$ ls
+default  st01.vassily.pro
+vldo@ululx:/etc/nginx/sites-enabled$ readlink -f $SITENAME
+/etc/nginx/sites-available/st01.vassily.pro
+==============
+TEST CONFIG
+vldo@ululx:~/sites/st01.vassily.pro$ sudo nginx -t
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+===============
+RELOAD NGINX, RESTART THE SERVER
+sudo systemctl reload nginx
+cd ~/sites/$SITENAME
+./vi*/bin/python manage.py runserver 8000
+================
+INSTALL GUNI
+./virtualenv/bin/pip install gunicorn
+vldo@ululx:~/sites/st01.vassily.pro$ ./virtualenv/bin/pip install gunicorn
+Collecting gunicorn
+  Downloading gunicorn-19.7.1-py2.py3-none-any.whl (111kB)
+    100% |████████████████████████████████| 112kB 4.2MB/s 
+Installing collected packages: gunicorn
+Successfully installed gunicorn-19.7.1
+vldo@ululx:~/sites/st01.vassily.pro$ ls vi*/bin | grep guni
+gunicorn         gunicorn_paster 
+vldo@ululx:~/sites/st01.vassily.pro$ ./virt*/bin/gunicorn superlists.wsgi:application
+[2018-04-07 09:30:26 +0000] [7070] [INFO] Starting gunicorn 19.7.1
+[2018-04-07 09:30:26 +0000] [7070] [INFO] Listening at: http://127.0.0.1:8000 (7070)
+[2018-04-07 09:30:26 +0000] [7070] [INFO] Using worker: sync
+[2018-04-07 09:30:26 +0000] [7073] [INFO] Booting worker with pid: 7073
+============
+LAPTOP: RUN FT
+Layout fails
+Reason: Gunicorn doesn't server statics.
+Solution: Tell nginx to serve statics
+===========
+MAKE NGINX SERVE STATICS
+./virtualenv/bin/python manage.py collectstatic --noinput
+# folder with statics created
+# Add second location to the nginx config
+  location /static {
+    alias /home/vldo/sites/DOMAIN/static;
+  }
+============
+RELOAD NGINX AND RESTART NGINX
+sudo systemctl reload nginx
+./virt*/bin/gunicorn superlists.wsgi:application
+RERUN FT OK
+============
+SWITCH TO UNIX SOCKETS
+Problem: easy to make mistakes
+put the sockets in TMP
+  location / {
+    # Use the sockets in V3
+    proxy_pass http://unix:/tmp/st01.vassily.pro.socket;
+    # proxy_pass http://localhost:8000;
+  }
+# RELOAD NGINX
+sudo systemctl reload nginx
+# RESTART GUNI, BUT MAKE SURE IT LISTENS ON A SOCKET INSTEAD OF THE DFLT PORT
+./virtualenv/bin/gunicorn --bind \
+unix:/tmp/st01.vassily.pro.socket superlists.wsgi:application
+# RERUN FT
+=============
+USE ENV VAR'S TO ADJUST SETTINGS FOR PROD
+- ALLOWED HOSTS
+- DEBUG
+- SECRET_KEY
+if DJANGO_DEBUG_FALSE in os.environ:
+    DEBUG = False
+    SECRET_KEY = o.environ['DJANGO_SECRET_KEY']
+    ALLOWED_HOSTS = [os.environ['SITENAME']]
+else:
+    DEBUG = True
+    SECRET_KEY = 'insecure-key-for-dev'
+    ALLOWED_HOSTS = []
+git commit
+git push
+================
+git pull
+export DJANGO_DEBUG_FALSE=y DJANGO_SECRET_KEY=abc123 SITENAME=st01.vassily.pro
+# RESTAR GUNI
+./virtualenv/bin/gunicorn --bind unix:/tmp/st01.vassily.pro.socket superlists.wsgi:application
+RUN FT
+BAD REQUEST 400
+Srch 1: Django 400 bad request
+Rst1: 
+Problem: nginx strips out the host headers by def, and makes it lk like they're from localhost. 
+Sol: Add proxy_set_header directive so it forwards the original host header
+  location / {
+    proxy_pass http://unix:/tmp/st01.vassily.pro.socket;
+    proxy_set_header Host $host;
+  }
+RUN FT OK
+=============
+USE .ENV FOR VARIABLES
+echo .env >> .gitignore
+============= VPS
+echo DJANGO_DEBUG_FALSE=y >> .env
+echo SITENAME=$SITENAME >>.env
+cat .env
+DJANGO_DEBUG_FALSE=y
+SITENAME=st01.vassily.pro
+# Generate a secret key using a one-liner
+echo DJANGO_SECRET_KEY=$(
+python3.6 -c"import random; print(''.join(random.SystemRandom().
+choices('abcdefghijklmnopqrstuvwxyz0123456789', k=50)))"
+) >> .env
+cat .env # check DJANGO_DEBUG_FALSE, SITENAME, DJANGO_SECRET_KEY
+# Check that everything works
+unset DJANGO_SECRET_KEY DJANGO_DEBUG_FALSE SITENAME
+echo $DJANGO_DEBUG_FALSE-none
+set -a; source .env; set +a
+echo $DJANGO_DEBUG_FALSE-none
+./virtualenv/bin/gunicorn --bind \
+ unix:/tmp/$SITENAME.socket superlists.wsgi:application
+RUN FT OK
+==================
+USE SYSTEMD SO GUNI STARTS ON BOOT
+Make sure the server starts up Guni on boot, and reloads auto after crashes.
+To do this, provide a systemd config
+example:
+# Location: /etc/systemd/system. Name m. end in .service
+server: /etc/systemd/system/gunicorn-superlists-staging.ottg.eu.service
+============
+[Unit]
+Description=Gunicorn server for st01.vassily.pro
+
+[Service]
+# will restart after crashes
+Restart=on-failure 
+# run the process as vldo
+User=vldo 
+# Cur wd
+WorkingDirectory=/home/vldo/sites/st01.vassily.pro 
+# the env file
+EnvironmentFile=/home/vldo/sites/st01.vassily.pro/.env 
+
+# Execute the following command
+ExecStart=/home/vldo/sites/st01.vassily.pro/virtualenv/bin/gunicorn \
+    --bind unix:/tmp/st01.vassily.pro.socket \
+    superlists.wsgi:application
+
+[Install]
+# Start on boot
+WantedBy=multi-user.target
+====================
+# Tell systemd to load the new config file
+sudo systemctl daemon-reload
+# Tell systemd to always load the service on boot
+sudo systemctl enable gunicorn-st01.vassily.pro
+Created symlink from /etc/systemd/system/multi-user.target.wants/gunicorn-st01.vassily.pro.service to /etc/systemd/system/gunicorn-st01.vassily.pro.service.
+# Actually start the service
+sudo systemctl start gunicorn-st01.vassily.pro
+# Chwck systemd logs
+sudo journalctl -u gunicorn-superlists-staging.ottg.eu
+# Ask Systemd to check the validity of yr service config
+systemd-analyze verify /path/to/my.service
+# If change to systemd config file, run 
+daemon-reload
+# then
+systemctl restart
+ADD GUNI TO REQS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

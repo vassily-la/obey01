@@ -1,0 +1,15 @@
+[Unit]
+Description=Gunicorn server for st01.vassily.pro
+
+[Service]
+Restart=on-failure
+User=vldo
+WorkingDirectory=/home/vldo/sites/st01.vassily.pro
+EnvironmentFile=/home/vldo/sites/st01.vassily.pro/.env
+
+ExecStart=/home/vldo/sites/st01.vassily.pro/virtualenv/bin/gunicorn \
+    --bind unix:/tmp/st01.vassily.pro.socket \
+    superlists.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
