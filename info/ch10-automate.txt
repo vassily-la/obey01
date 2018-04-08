@@ -1,0 +1,17 @@
+PROVISIONING
+1. Already have: user acct and home folder.
+2. sudo add-apt-repository ppa:deadsnakes && apt update
+3. sudo apt install nginx curl git python3.6 python3.6-venv
+4. Add nginx config for virtual host
+5. Add Systemd job for Guni (including unique Secret key)
+
+DEPLOYMENT
+1. Create dir in ~/sites
+2. Pull down source code
+3. Start virtualenv
+4. pip install -r reqs
+5. manage.py migrate
+6. collectstatic
+7. restart gunicorn
+8. run ft
+
