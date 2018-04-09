@@ -1,3 +1,31 @@
 pip3 install fabric3
 
+# CREATE THE SCRIPT
 touch deploy_tools/fabfile.py
+
+# PROPAGATE THE OLD & UPDATE THE STAGING
+git push
+git pull
+cd deploy_tools
+fab deploy:host=vldo@st01.vassily.pro
+
+# DEPLOY FOR THE LIVE SERVER
+Add one A record for live.
+fab deploy:host=vldo@live.vassily.pro
+
+# PROVISION NGINX & GUNI
+cat ./deploy_tools/nginx.template.conf \
+    | sed "s/DOMAIN/live.vassily.pro/g" \
+    | sudo tee /etc/nginx/sites-available/live.vassily.pro
+
+sudo ln -s /etc/nginx/sites-available/live.vassily.pro \
+    /etc/nginx/sites-enabled/live.vassily.pro
+
+cat ./deploy_tools/gunicorn-systemd.template.service \
+    | sed "s/DOMAIN/live.vassily.pro/g" \
+    | sudo tee /etc/systemd/system/gunicorn-live.vassily.pro.service
+
+sudo systemctl daemon-reload
+sudo systemctl reload nginx
+sudo systemctl enable gunicorn-live.vassily.pro
+sudo systemctl start gunicorn-live.vassily.pro
