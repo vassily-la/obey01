@@ -5,10 +5,10 @@ STAGING_SERVER=st01.vassily.pro ./ma* test ft
 ---
 echo 'YOUR-PUBLIC_KEY' > > ~/.ssh/authorized_keys
 
-useradd -m -s /bin/bash vldo # add user named vldo 
+useradd -m -s /bin/bash vldo # add user named vldo
 # -m creates a home folder, -s sets vldo to use bash by default
-usermod -a -G sudo vldo # add to the sudoers group
-passwd vldo 
+usermod -a -G sudo vl2do # add to the sudoers group
+passwd vldo
 su - vldo # switch-user to vldo!
 
 sudo add-apt-repository ppa:deadsnakes/ppa
@@ -21,10 +21,10 @@ python3.6 manage.py runserver
 
 =============== LOCAL
 STAGING_SERVER=st01.vassily.pro ./ma* test ft # FAIL
-curl st01.vassily.pro # 
+curl st01.vassily.pro #
 ================remote
 python3.6 manage.py runserver 0.0.0.0:8000 # make sure it listens
-===============local 
+===============local
 STAGING_SERVER=st01.vassily.pro:8000 ./ma* test ft --failfast
 # FAIL: disallowed host
 SOLVED
@@ -32,7 +32,7 @@ SOLVED
 sudo apt install nginx
 # Start nginx
 sudo systemctl start nginx
-then 
+then
 touch /etc/nginx/sites-available/DOMAIN
 ==========
 server {
@@ -67,11 +67,11 @@ INSTALL GUNI
 vldo@ululx:~/sites/st01.vassily.pro$ ./virtualenv/bin/pip install gunicorn
 Collecting gunicorn
   Downloading gunicorn-19.7.1-py2.py3-none-any.whl (111kB)
-    100% |████████████████████████████████| 112kB 4.2MB/s 
+    100% |████████████████████████████████| 112kB 4.2MB/s
 Installing collected packages: gunicorn
 Successfully installed gunicorn-19.7.1
 vldo@ululx:~/sites/st01.vassily.pro$ ls vi*/bin | grep guni
-gunicorn         gunicorn_paster 
+gunicorn         gunicorn_paster
 vldo@ululx:~/sites/st01.vassily.pro$ ./virt*/bin/gunicorn superlists.wsgi:application
 [2018-04-07 09:30:26 +0000] [7070] [INFO] Starting gunicorn 19.7.1
 [2018-04-07 09:30:26 +0000] [7070] [INFO] Listening at: http://127.0.0.1:8000 (7070)
@@ -133,8 +133,8 @@ export DJANGO_DEBUG_FALSE=y DJANGO_SECRET_KEY=abc123 SITENAME=st01.vassily.pro
 RUN FT
 BAD REQUEST 400
 Srch 1: Django 400 bad request
-Rst1: 
-Problem: nginx strips out the host headers by def, and makes it lk like they're from localhost. 
+Rst1:
+Problem: nginx strips out the host headers by def, and makes it lk like they're from localhost.
 Sol: Add proxy_set_header directive so it forwards the original host header
   location / {
     proxy_pass http://unix:/tmp/st01.vassily.pro.socket;
@@ -177,13 +177,13 @@ Description=Gunicorn server for st01.vassily.pro
 
 [Service]
 # will restart after crashes
-Restart=on-failure 
+Restart=on-failure
 # run the process as vldo
-User=vldo 
+User=vldo
 # Cur wd
-WorkingDirectory=/home/vldo/sites/st01.vassily.pro 
+WorkingDirectory=/home/vldo/sites/st01.vassily.pro
 # the env file
-EnvironmentFile=/home/vldo/sites/st01.vassily.pro/.env 
+EnvironmentFile=/home/vldo/sites/st01.vassily.pro/.env
 
 # Execute the following command
 ExecStart=/home/vldo/sites/st01.vassily.pro/virtualenv/bin/gunicorn \
@@ -205,25 +205,8 @@ sudo systemctl start gunicorn-st01.vassily.pro
 sudo journalctl -u gunicorn-superlists-staging.ottg.eu
 # Ask Systemd to check the validity of yr service config
 systemd-analyze verify /path/to/my.service
-# If change to systemd config file, run 
+# If change to systemd config file, run
 daemon-reload
 # then
 systemctl restart
 ADD GUNI TO REQS
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
